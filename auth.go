@@ -34,37 +34,35 @@ type AuthResponse struct {
 }
 
 // Interacts with user data source
-var userNoMatch = errors.New("email and password does not match")
+var UserNoMatch = errors.New("email and password does not match")
 
 type CheckPassword interface {
-	Check(ctx context.Context, username string, password string) (*User, error)
+	Check(ctx context.Context, user *User) error
 }
 
 type CheckPasswordPq struct {
 	Pool *pgxpool.Pool
 }
 
-func (cp *CheckPasswordPq) Check(ctx context.Context, email string, password string) (*User, error) {
+func (cp *CheckPasswordPq) Check(ctx context.Context, user *User) error {
 	// Get connection from Pool
 	conn, err := cp.Pool.Acquire(ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer conn.Release()
 
 	// Execute query
-	user := &User{Email: email, Password: password}
-
 	query := "SELECT user_id, role, name FROM User WHERE email = $1 AND password = $2 LIMIT 1"
-	if err := conn.QueryRow(ctx, query, email, password).Scan(&user.UserId, &user.Role, &user.Name); err != nil {
+	if err := conn.QueryRow(ctx, query, user.Email, user.Password).Scan(&user.UserId, &user.Role, &user.Name); err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, userNoMatch
+			return UserNoMatch
 		}
 
-		return nil, err
+		return err
 	}
 
-	return user, nil
+	return nil
 }
 
 // Interacts with refresh token data source
@@ -107,9 +105,8 @@ func (ah *AuthHandler) Authenticate(ctx *gin.Context) {
 	// TODO Add hashing algorithm for password if necessary
 
 	// Check is username and password match
-	user, err := ah.CheckPassword.Check(ctx, user.Email, user.Password)
-	if err != nil {
-		if err == userNoMatch {
+	if err := ah.CheckPassword.Check(ctx, user); err != nil {
+		if err == UserNoMatch {
 			ctx.String(http.StatusNotFound, "no match")
 		} else {
 			ctx.String(http.StatusInternalServerError, "internal error when checking password")
@@ -125,6 +122,10 @@ func (ah *AuthHandler) Authenticate(ctx *gin.Context) {
 	})
 
 	tokenString, err := token.SignedString(ah.Secret)
+	if err != nil {
+		ctx.String(http.StatusInternalServerError, "internal error when creating jwt token")
+		return
+	}
 
 	// Add refresh token to Redis
 	refreshToken := uuid.New().String()
