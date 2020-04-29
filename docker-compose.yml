@@ -3,6 +3,9 @@ services:
   psql:
     build: ./psql
     container_name: sos-psql
+    environment:
+      POSTGRES_USER: docker
+      POSTGRES_PASSWORD: password
     ports:
       - "5432:5432"
   redis:
@@ -15,7 +18,7 @@ services:
     container_name: sos-auth
     environment:
       JWT_SECRET: example-secret
-      PSQL_URI: postgresql://docker:password@sos-psql:5432/docker
+      PSQL_URI: postgresql://docker:password@sos-psql:5432
       REDIS_ADDR: sos-redis:6379
     ports:
       - "4356:4356"
