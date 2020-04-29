@@ -63,7 +63,7 @@ func (c *CheckTokenRedis) Check(ctx context.Context, token string) (*RefreshData
 // Handles the refresh token endpoint
 type RefreshHandler struct {
 	CheckToken CheckToken
-	Secret     string
+	Secret     []byte
 }
 
 func (rh *RefreshHandler) Refresh(ctx *gin.Context) {

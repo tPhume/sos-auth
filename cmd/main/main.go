@@ -22,6 +22,8 @@ func main() {
 
 	failOnEmpty(secret, psql, redisAddr)
 
+	byteSecret := []byte(secret)
+
 	// Get Postgres Connection Pool
 	pool, err := pgxpool.Connect(context.Background(), psql)
 	failOnError("could not get pgx connection pool", err)
@@ -49,11 +51,10 @@ func main() {
 
 	engine := gin.New()
 	engine.Use(cors.New(corsConfig))
-
-	authHandler := &auth.AuthHandler{CheckPassword: checkPassword, AddRefreshToken: addRefreshToken, Secret: secret}
+	authHandler := &auth.AuthHandler{CheckPassword: checkPassword, AddRefreshToken: addRefreshToken, Secret: byteSecret}
 	engine.POST("/api/v1/authenticate", authHandler.Authenticate)
 
-	refreshHandler := &auth.RefreshHandler{CheckToken: checkToken, Secret: secret}
+	refreshHandler := &auth.RefreshHandler{CheckToken: checkToken, Secret: byteSecret}
 	engine.POST("/api/v1/refresh", refreshHandler.Refresh)
 
 	log.Fatal(engine.Run("0.0.0.0:4356"))

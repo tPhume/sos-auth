@@ -91,7 +91,7 @@ func (a *AddRefreshTokenRedis) Add(ctx context.Context, refreshToken string, dat
 type AuthHandler struct {
 	CheckPassword   CheckPassword
 	AddRefreshToken AddRefreshToken
-	Secret          string
+	Secret          []byte
 }
 
 func (ah *AuthHandler) Authenticate(ctx *gin.Context) {
@@ -123,7 +123,7 @@ func (ah *AuthHandler) Authenticate(ctx *gin.Context) {
 
 	tokenString, err := token.SignedString(ah.Secret)
 	if err != nil {
-		ctx.String(http.StatusInternalServerError, "internal error when creating jwt token")
+		ctx.String(http.StatusInternalServerError, "internal error when creating jwt token: %s", err.Error())
 		return
 	}
 
