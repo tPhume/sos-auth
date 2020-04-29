@@ -22,7 +22,7 @@ type User struct {
 }
 
 // Response body
-type Token struct {
+type AuthResponse struct {
 	UserId       string `json:"user_id"`
 	Role         string `json:"role"`
 	Name         string `json:"name"`
@@ -122,5 +122,15 @@ func (ah *AuthHandler) Authenticate(ctx *gin.Context) {
 		return
 	}
 
-	// TODO Construct Response
+	// Create Response
+	response := &AuthResponse{
+		UserId:       user.UserId,
+		Role:         user.Role,
+		Name:         user.Name,
+		Email:        user.Email,
+		Token:        tokenString,
+		RefreshToken: refreshToken,
+	}
+
+	ctx.JSON(http.StatusCreated, response)
 }
