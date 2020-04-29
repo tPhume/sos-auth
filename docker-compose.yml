@@ -15,6 +15,9 @@ services:
       - "6379:6379"
   auth:
     build: .
+    depends_on:
+      - psql
+      - redis
     container_name: sos-auth
     environment:
       JWT_SECRET: example-secret
@@ -22,3 +25,4 @@ services:
       REDIS_ADDR: sos-redis:6379
     ports:
       - "4356:4356"
+    restart: always
