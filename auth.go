@@ -2,6 +2,7 @@ package sos_auth
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
@@ -20,6 +21,12 @@ type User struct {
 	Name     string
 	Email    string `json:"email" binding:"required"`
 	Password string `json:"password" binding:"required"`
+}
+
+// Data to store with refresh token
+type RefreshData struct {
+	UserId int    `json:"user_id"`
+	Role   string `json:"role"`
 }
 
 // Response body
@@ -68,15 +75,20 @@ func (cp *CheckPasswordPq) Check(ctx context.Context, email string, password str
 
 // Interacts with refresh token data source
 type AddRefreshToken interface {
-	Add(ctx context.Context, userId int, refreshToken string) error
+	Add(ctx context.Context, refreshToken string, data RefreshData) error
 }
 
 type AddRefreshTokenRedis struct {
 	Client *redis.Client
 }
 
-func (a *AddRefreshTokenRedis) Add(ctx context.Context, userId int, refreshToken string) error {
-	if status := a.Client.Set(refreshToken, userId, time.Hour*8); status.Err() != nil {
+func (a *AddRefreshTokenRedis) Add(ctx context.Context, refreshToken string, data RefreshData) error {
+	dataJSON, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	if status := a.Client.Set(refreshToken, string(dataJSON), time.Hour*8); status.Err() != nil {
 		return status.Err()
 	}
 
@@ -122,7 +134,7 @@ func (ah *AuthHandler) Authenticate(ctx *gin.Context) {
 
 	// Add refresh token to Redis
 	refreshToken := uuid.New().String()
-	if err := ah.AddRefreshToken.Add(ctx, user.UserId, refreshToken); err != nil {
+	if err := ah.AddRefreshToken.Add(ctx, refreshToken, RefreshData{UserId: user.UserId, Role: user.Role}); err != nil {
 		ctx.String(http.StatusInternalServerError, "internal error when creating refresh token")
 		return
 	}
