@@ -27,7 +27,7 @@ func main() {
 	failOnError("could not get pgx connection pool", err)
 
 	// Get Redis client
-	redis := redis.NewClient(&redis.Options{
+	redisClient := redis.NewClient(&redis.Options{
 		Addr:     redisAddr,
 		Password: redisPassword,
 		DB:       0,
@@ -35,8 +35,8 @@ func main() {
 
 	// Create Repo
 	checkPassword := &auth.CheckPasswordPq{Pool: pool}
-	addRefreshToken := &auth.AddRefreshTokenRedis{Client: redis}
-	checkToken := &auth.CheckTokenRedis{Client: redis}
+	addRefreshToken := &auth.AddRefreshTokenRedis{Client: redisClient}
+	checkToken := &auth.CheckTokenRedis{Client: redisClient}
 
 	// Create server
 	corsConfig := cors.Config{
