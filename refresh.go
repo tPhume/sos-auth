@@ -2,9 +2,11 @@ package sos_auth
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v7"
 	"net/http"
 )
 
@@ -31,6 +33,34 @@ type CheckToken interface {
 	Check(ctx context.Context, token string) (*RefreshData, error)
 }
 
+type CheckTokenRedis struct {
+	Client *redis.Client
+}
+
+func (c *CheckTokenRedis) Check(ctx context.Context, token string) (*RefreshData, error) {
+	res := c.Client.Get(token)
+	if res.Err() != nil {
+		if res.Err() == redis.Nil {
+			return nil, refreshNoMatch
+		}
+
+		return nil, res.Err()
+	}
+
+	dataBytes, err := res.Bytes()
+	if err != nil {
+		return nil, err
+	}
+
+	data := &RefreshData{}
+	if err := json.Unmarshal(dataBytes, data); err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+// Handles the refresh token endpoint
 type RefreshHandler struct {
 	CheckToken CheckToken
 	Secret     string
