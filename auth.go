@@ -23,12 +23,6 @@ type User struct {
 	Password string `json:"password" binding:"required"`
 }
 
-// Data to store with refresh token
-type RefreshData struct {
-	UserId int    `json:"user_id"`
-	Role   string `json:"role"`
-}
-
 // Response body
 type AuthResponse struct {
 	UserId       int    `json:"user_id"`
