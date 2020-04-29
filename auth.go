@@ -1,4 +1,4 @@
-package sos_auth
+package auth
 
 import (
 	"context"
