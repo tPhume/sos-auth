@@ -20,7 +20,7 @@ func main() {
 	redisAddr := os.Getenv("REDIS_ADDR")
 	redisPassword := os.Getenv("REDIS_PASSWORD")
 
-	failOnEmpty(secret, psql, redisAddr, redisPassword)
+	failOnEmpty(secret, psql, redisAddr)
 
 	// Get Postgres Connection Pool
 	pool, err := pgxpool.Connect(context.Background(), psql)
