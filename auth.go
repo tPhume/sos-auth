@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"net/http"
+	"time"
 )
 
 // User entity
@@ -75,7 +76,11 @@ type AddRefreshTokenRedis struct {
 }
 
 func (a *AddRefreshTokenRedis) Add(ctx context.Context, userId string, refreshToken string) error {
-	panic("implement me")
+	if status := a.Client.Set(refreshToken, userId, time.Hour*8); status.Err() != nil {
+		return status.Err()
+	}
+
+	return nil
 }
 
 // Gin handler
