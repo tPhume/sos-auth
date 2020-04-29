@@ -15,7 +15,7 @@ import (
 
 // User entity
 type User struct {
-	UserId   string
+	UserId   int
 	Role     string
 	Name     string
 	Email    string `json:"email" binding:"required"`
@@ -24,7 +24,7 @@ type User struct {
 
 // Response body
 type AuthResponse struct {
-	UserId       string `json:"user_id"`
+	UserId       int    `json:"user_id"`
 	Role         string `json:"role"`
 	Name         string `json:"name"`
 	Email        string `json:"email" binding:"required"`
@@ -68,14 +68,14 @@ func (cp *CheckPasswordPq) Check(ctx context.Context, email string, password str
 
 // Interacts with refresh token data source
 type AddRefreshToken interface {
-	Add(ctx context.Context, userId string, refreshToken string) error
+	Add(ctx context.Context, userId int, refreshToken string) error
 }
 
 type AddRefreshTokenRedis struct {
 	Client *redis.Client
 }
 
-func (a *AddRefreshTokenRedis) Add(ctx context.Context, userId string, refreshToken string) error {
+func (a *AddRefreshTokenRedis) Add(ctx context.Context, userId int, refreshToken string) error {
 	if status := a.Client.Set(refreshToken, userId, time.Hour*8); status.Err() != nil {
 		return status.Err()
 	}
