@@ -1,0 +1,28 @@
+version: '3.7'
+services:
+  psql:
+    build: ./psql
+    container_name: sos-psql
+    environment:
+      POSTGRES_USER: docker
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+  redis:
+    container_name: sos-redis
+    image: redis:5.0.8
+    ports:
+      - "6379:6379"
+  auth:
+    build: .
+    depends_on:
+      - psql
+      - redis
+    container_name: sos-auth
+    environment:
+      JWT_SECRET: example-secret
+      PSQL_URI: postgresql://docker:password@sos-psql:5432
+      REDIS_ADDR: sos-redis:6379
+    ports:
+      - "4356:4356"
+    restart: always
