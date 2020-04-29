@@ -3,6 +3,7 @@ package sos_auth
 import (
 	"context"
 	"errors"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -20,6 +21,10 @@ type User struct {
 
 // Response body
 type Token struct {
+	UserId       string `json:"user_id"`
+	Role         string `json:"role"`
+	Name         string `json:"name"`
+	Email        string `json:"email" binding:"required"`
 	Token        string `json:"token"`
 	RefreshToken string `json:"refresh_token"`
 }
@@ -86,7 +91,15 @@ func (ah *AuthHandler) Authenticate(ctx *gin.Context) {
 		return
 	}
 
-	// TODO Create JWT token
+	// Create JWT token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id": user.UserId,
+		"role":    user.Role,
+	})
+
+	tokenString, err := token.SignedString(ah.Secret)
 
 	// TODO Add new refresh token to Redis
+
+	// TODO Construct Response
 }
