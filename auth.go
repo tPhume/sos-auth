@@ -5,6 +5,8 @@ import (
 	"errors"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v7"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"net/http"
@@ -29,7 +31,7 @@ type Token struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
-// Interacts with data source
+// Interacts with user data source
 var userNoMatch = errors.New("email and password does not match")
 
 type CheckPassword interface {
@@ -63,10 +65,24 @@ func (cp *CheckPasswordPq) Check(ctx context.Context, email string, password str
 	return user, nil
 }
 
+// Interacts with refresh token data source
+type AddRefreshToken interface {
+	Add(ctx context.Context, userId string, refreshToken string) error
+}
+
+type AddRefreshTokenRedis struct {
+	Client *redis.Client
+}
+
+func (a *AddRefreshTokenRedis) Add(ctx context.Context, userId string, refreshToken string) error {
+	panic("implement me")
+}
+
 // Gin handler
 type AuthHandler struct {
-	CheckPassword CheckPassword
-	Secret        string
+	CheckPassword   CheckPassword
+	AddRefreshToken AddRefreshToken
+	Secret          string
 }
 
 func (ah *AuthHandler) Authenticate(ctx *gin.Context) {
@@ -85,7 +101,7 @@ func (ah *AuthHandler) Authenticate(ctx *gin.Context) {
 		if err == userNoMatch {
 			ctx.String(http.StatusNotFound, "no match")
 		} else {
-			ctx.String(http.StatusInternalServerError, "internal error")
+			ctx.String(http.StatusInternalServerError, "internal error when checking password")
 		}
 
 		return
@@ -99,7 +115,12 @@ func (ah *AuthHandler) Authenticate(ctx *gin.Context) {
 
 	tokenString, err := token.SignedString(ah.Secret)
 
-	// TODO Add new refresh token to Redis
+	// Add refresh token to Redis
+	refreshToken := uuid.New().String()
+	if err := ah.AddRefreshToken.Add(ctx, user.UserId, refreshToken); err != nil {
+		ctx.String(http.StatusInternalServerError, "internal error when creating refresh token")
+		return
+	}
 
 	// TODO Construct Response
 }
