@@ -14,17 +14,17 @@ import (
 )
 
 func main() {
-	var redisAddr, redisUri string
+	var redisAddr, redisUrl string
 	// Get env
 	secret := os.Getenv("JWT_SECRET")
 	psql := os.Getenv("PSQL_URI")
 
 	redisAddr = os.Getenv("REDIS_ADDR")
 	if redisAddr == "" {
-		redisUri = os.Getenv("REDIS_URI")
+		redisUrl = os.Getenv("REDIS_URL")
 	}
 
-	failOnEmpty(secret, psql, redisUri)
+	failOnEmpty(secret, psql, redisUrl)
 
 	byteSecret := []byte(secret)
 
@@ -35,8 +35,8 @@ func main() {
 	// Get Redis client
 	var redisOpt *redis.Options
 
-	if redisUri != "" {
-		redisOpt, err = redis.ParseURL(redisUri)
+	if redisUrl != "" {
+		redisOpt, err = redis.ParseURL(redisUrl)
 		failOnError("bad redis uri", err)
 	} else {
 		redisOpt = &redis.Options{Addr: redisAddr, DB: 0}
