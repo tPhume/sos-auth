@@ -14,13 +14,17 @@ import (
 )
 
 func main() {
+	var redisAddr, redisUri string
 	// Get env
 	secret := os.Getenv("JWT_SECRET")
 	psql := os.Getenv("PSQL_URI")
-	redisAddr := os.Getenv("REDIS_ADDR")
-	redisPassword := os.Getenv("REDIS_PASSWORD")
 
-	failOnEmpty(secret, psql, redisAddr)
+	redisAddr = os.Getenv("REDIS_ADDR")
+	if redisAddr == "" {
+		redisUri = os.Getenv("REDIS_URI")
+	}
+
+	failOnEmpty(secret, psql, redisUri)
 
 	byteSecret := []byte(secret)
 
@@ -29,11 +33,16 @@ func main() {
 	failOnError("could not get pgx connection pool", err)
 
 	// Get Redis client
-	redisClient := redis.NewClient(&redis.Options{
-		Addr:     redisAddr,
-		Password: redisPassword,
-		DB:       0,
-	})
+	var redisOpt *redis.Options
+
+	if redisUri != "" {
+		redisOpt, err = redis.ParseURL(redisUri)
+		failOnError("bad redis uri", err)
+	} else {
+		redisOpt = &redis.Options{Addr: redisAddr, DB: 0}
+	}
+
+	redisClient := redis.NewClient(redisOpt)
 
 	// Create Repo
 	checkPassword := &auth.CheckPasswordPq{Pool: pool}
