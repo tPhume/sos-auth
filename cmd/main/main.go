@@ -66,7 +66,17 @@ func main() {
 	refreshHandler := &auth.RefreshHandler{CheckToken: checkToken, Secret: byteSecret}
 	engine.POST("/api/v1/refresh", refreshHandler.Refresh)
 
-	log.Fatal(engine.Run("0.0.0.0:4356"))
+	// Start application
+	var port, address string
+
+	port = os.Getenv("PORT")
+	if port == "" {
+		address = "0.0.0.0:4356"
+	} else {
+		address = "0.0.0.0:" + port
+	}
+
+	log.Fatal(engine.Run(address))
 }
 
 func failOnEmpty(env ...string) {
