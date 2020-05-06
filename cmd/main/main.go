@@ -14,17 +14,20 @@ import (
 )
 
 func main() {
-	var redisAddr, redisUri string
+	var redisAddr, redisUrl string
 	// Get env
 	secret := os.Getenv("JWT_SECRET")
 	psql := os.Getenv("PSQL_URI")
 
 	redisAddr = os.Getenv("REDIS_ADDR")
 	if redisAddr == "" {
-		redisUri = os.Getenv("REDIS_URI")
+		redisUrl = os.Getenv("REDIS_URL")
+		if redisUrl == "" {
+			log.Fatal("missing env")
+		}
 	}
 
-	failOnEmpty(secret, psql, redisUri)
+	failOnEmpty(secret, psql)
 
 	byteSecret := []byte(secret)
 
@@ -35,8 +38,8 @@ func main() {
 	// Get Redis client
 	var redisOpt *redis.Options
 
-	if redisUri != "" {
-		redisOpt, err = redis.ParseURL(redisUri)
+	if redisUrl != "" {
+		redisOpt, err = redis.ParseURL(redisUrl)
 		failOnError("bad redis uri", err)
 	} else {
 		redisOpt = &redis.Options{Addr: redisAddr, DB: 0}
@@ -66,7 +69,17 @@ func main() {
 	refreshHandler := &auth.RefreshHandler{CheckToken: checkToken, Secret: byteSecret}
 	engine.POST("/api/v1/refresh", refreshHandler.Refresh)
 
-	log.Fatal(engine.Run("0.0.0.0:4356"))
+	// Start application
+	var port, address string
+
+	port = os.Getenv("PORT")
+	if port == "" {
+		address = "0.0.0.0:4356"
+	} else {
+		address = "0.0.0.0:" + port
+	}
+
+	log.Fatal(engine.Run(address))
 }
 
 func failOnEmpty(env ...string) {

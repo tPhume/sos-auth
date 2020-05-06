@@ -56,7 +56,7 @@ func (cp *CheckPasswordPq) Check(ctx context.Context, user *User) error {
 	// Execute query
 	temp := user.Password
 
-	query := "SELECT id, role, username, password FROM \"User\" WHERE email = $1 LIMIT 1"
+	query := "SELECT id, role, username, password FROM \"Users\" WHERE email = $1 LIMIT 1"
 	if err := conn.QueryRow(ctx, query, user.Email).Scan(&user.UserId, &user.Role, &user.Name, &user.Password); err != nil {
 		if err == pgx.ErrNoRows {
 			return UserNoMatch
