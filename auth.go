@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"time"
 )
@@ -53,9 +54,19 @@ func (cp *CheckPasswordPq) Check(ctx context.Context, user *User) error {
 	defer conn.Release()
 
 	// Execute query
-	query := "SELECT user_id, role, name FROM Account WHERE email = $1 AND password = $2 LIMIT 1"
-	if err := conn.QueryRow(ctx, query, user.Email, user.Password).Scan(&user.UserId, &user.Role, &user.Name); err != nil {
+	temp := user.Password
+
+	query := "SELECT id, role, username, password FROM \"User\" WHERE email = $1 LIMIT 1"
+	if err := conn.QueryRow(ctx, query, user.Email).Scan(&user.UserId, &user.Role, &user.Name, &user.Password); err != nil {
 		if err == pgx.ErrNoRows {
+			return UserNoMatch
+		}
+
+		return err
+	}
+
+	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(temp)); err != nil {
+		if err == bcrypt.ErrMismatchedHashAndPassword {
 			return UserNoMatch
 		}
 
@@ -102,14 +113,12 @@ func (ah *AuthHandler) Authenticate(ctx *gin.Context) {
 		return
 	}
 
-	// TODO Add hashing algorithm for password if necessary
-
 	// Check is username and password match
 	if err := ah.CheckPassword.Check(ctx, user); err != nil {
 		if err == UserNoMatch {
 			ctx.String(http.StatusNotFound, "no match")
 		} else {
-			ctx.String(http.StatusInternalServerError, "internal error when checking password")
+			ctx.String(http.StatusInternalServerError, "internal error when checking password, error: %s", err.Error())
 		}
 
 		return
