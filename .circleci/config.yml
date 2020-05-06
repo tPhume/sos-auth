@@ -1,0 +1,14 @@
+# Golang CircleCI 2.0 configuration file
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/golang:1.13
+
+    working_directory: /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}
+    steps:
+      - checkout
+      # We must first get our dependices
+      - run: go get -v -t -d ./...
+      # Now we run the unit test
+      - run: go test -v ./...
