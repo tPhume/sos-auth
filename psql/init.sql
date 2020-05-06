@@ -11,3 +11,4 @@ CREATE TABLE "Users"
 INSERT INTO "Users" (role, username, email, password, address)
 VALUES ('user', 'Jack', 'jack@supermail.com', '$2y$10$MmgAdnJGQBlI8P42Cukn4u9RpGzhtHMjg6b3Tq9Zcp2Fin/lWmMW2',
         'Jack Street 42, Bangkok, Thailand');
+

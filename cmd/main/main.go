@@ -22,9 +22,12 @@ func main() {
 	redisAddr = os.Getenv("REDIS_ADDR")
 	if redisAddr == "" {
 		redisUrl = os.Getenv("REDIS_URL")
+		if redisUrl == "" {
+			log.Fatal("missing env")
+		}
 	}
 
-	failOnEmpty(secret, psql, redisUrl)
+	failOnEmpty(secret, psql)
 
 	byteSecret := []byte(secret)
 
